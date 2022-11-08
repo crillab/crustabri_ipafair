@@ -1,0 +1,122 @@
+#![allow(clippy::not_unsafe_ptr_arg_deref)]
+
+use const_cstr::const_cstr;
+use ipafair_solver::{IpafairSolver, IpafairSolverSemantics};
+use ipafair_sys::semantics;
+
+mod ipafair_solver;
+
+const_cstr! {
+    IPAFAIR_SIGNATURE = "ICCMA'23";
+}
+
+const STATUS_YES: ::std::os::raw::c_int = 10;
+const STATUS_NO: ::std::os::raw::c_int = 20;
+
+#[no_mangle]
+pub extern "C" fn ipafair_signature() -> *const ::std::os::raw::c_char {
+    IPAFAIR_SIGNATURE.as_ptr()
+}
+
+#[no_mangle]
+pub extern "C" fn ipafair_init() -> *mut ::std::os::raw::c_void {
+    Box::into_raw(Box::new(IpafairSolver::default())) as *mut _
+}
+
+#[no_mangle]
+pub extern "C" fn ipafair_release(solver_ptr: *mut ::std::os::raw::c_void) {
+    debug_assert!(!solver_ptr.is_null());
+    unsafe {
+        drop(Box::from_raw(solver_ptr));
+    }
+}
+
+macro_rules! solver_from_ptr {
+    ($ptr:ident) => {
+        unsafe {
+            debug_assert!(!$ptr.is_null());
+            &mut *($ptr as *mut IpafairSolver)
+        }
+    };
+}
+
+fn i32_arg_to_usize(n: i32) -> usize {
+    if n <= 0 {
+        panic!("invalid argument: {}", n)
+    }
+    n as usize
+}
+
+#[no_mangle]
+pub extern "C" fn ipafair_set_semantics(
+    solver_ptr: *mut ::std::os::raw::c_void,
+    uint_sem: semantics,
+) {
+    let solver = solver_from_ptr!(solver_ptr);
+    let sem = IpafairSolverSemantics::from(uint_sem);
+    solver.set_semantics(sem)
+}
+
+#[no_mangle]
+pub extern "C" fn ipafair_add_argument(solver_ptr: *mut ::std::os::raw::c_void, arg: i32) {
+    let solver = solver_from_ptr!(solver_ptr);
+    solver.add_argument(i32_arg_to_usize(arg))
+}
+
+#[no_mangle]
+pub extern "C" fn ipafair_del_argument(solver_ptr: *mut ::std::os::raw::c_void, arg: i32) {
+    let solver = solver_from_ptr!(solver_ptr);
+    solver.remove_argument(i32_arg_to_usize(arg))
+}
+
+#[no_mangle]
+pub extern "C" fn ipafair_add_attack(solver_ptr: *mut ::std::os::raw::c_void, s: i32, t: i32) {
+    let solver = solver_from_ptr!(solver_ptr);
+    solver.add_attack(i32_arg_to_usize(s), i32_arg_to_usize(t))
+}
+
+#[no_mangle]
+pub extern "C" fn ipafair_del_attack(solver_ptr: *mut ::std::os::raw::c_void, s: i32, t: i32) {
+    let solver = solver_from_ptr!(solver_ptr);
+    solver.remove_attack(i32_arg_to_usize(s), i32_arg_to_usize(t))
+}
+
+#[no_mangle]
+pub extern "C" fn ipafair_assume(solver_ptr: *mut ::std::os::raw::c_void, arg: i32) {
+    let solver = solver_from_ptr!(solver_ptr);
+    solver.add_assumption(i32_arg_to_usize(arg))
+}
+
+#[no_mangle]
+pub extern "C" fn ipafair_solve_cred(
+    solver_ptr: *mut ::std::os::raw::c_void,
+) -> ::std::os::raw::c_int {
+    let solver = solver_from_ptr!(solver_ptr);
+    if solver.check_credulous_acceptance_of_assumptions() {
+        STATUS_YES
+    } else {
+        STATUS_NO
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn ipafair_solve_skept(
+    solver_ptr: *mut ::std::os::raw::c_void,
+) -> ::std::os::raw::c_int {
+    let solver = solver_from_ptr!(solver_ptr);
+    if solver.check_skeptical_acceptance_of_assumptions() {
+        STATUS_YES
+    } else {
+        STATUS_NO
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn ipafair_val(solver_ptr: *mut ::std::os::raw::c_void, arg: i32) -> i32 {
+    let solver = solver_from_ptr!(solver_ptr);
+    if solver.in_last_extension(i32_arg_to_usize(arg)) {
+        arg
+    } else {
+        -arg
+    }
+}
