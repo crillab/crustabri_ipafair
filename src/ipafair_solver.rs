@@ -1,6 +1,10 @@
-use crustabri::{AAFramework, Argument};
+use crustabri::{
+    AAFramework, CompleteSemanticsSolver, CredulousAcceptanceComputer, GroundedSemanticsSolver,
+    PreferredSemanticsSolver, SkepticalAcceptanceComputer, StableSemanticsSolver,
+};
 use ipafair_sys::semantics;
 
+#[derive(Copy, Clone)]
 pub enum IpafairSolverSemantics {
     CO,
     PR,
@@ -18,11 +22,46 @@ impl From<semantics> for IpafairSolverSemantics {
     }
 }
 
+impl From<IpafairSolverSemantics> for semantics {
+    fn from(sem: IpafairSolverSemantics) -> Self {
+        match sem {
+            IpafairSolverSemantics::CO => 1,
+            IpafairSolverSemantics::PR => 2,
+            IpafairSolverSemantics::ST => 3,
+        }
+    }
+}
+
+impl IpafairSolverSemantics {
+    fn credulous_acceptance_solver<'a>(
+        &self,
+        af: &'a AAFramework<usize>,
+    ) -> Box<dyn CredulousAcceptanceComputer<usize> + 'a> {
+        match self {
+            IpafairSolverSemantics::CO | IpafairSolverSemantics::PR => {
+                Box::new(CompleteSemanticsSolver::new(af))
+            }
+            IpafairSolverSemantics::ST => Box::new(StableSemanticsSolver::new(af)),
+        }
+    }
+
+    fn skeptical_acceptance_solver<'a>(
+        &self,
+        af: &'a AAFramework<usize>,
+    ) -> Box<dyn SkepticalAcceptanceComputer<usize> + 'a> {
+        match self {
+            IpafairSolverSemantics::CO => Box::new(GroundedSemanticsSolver::new(af)),
+            IpafairSolverSemantics::PR => Box::new(PreferredSemanticsSolver::new(af)),
+            IpafairSolverSemantics::ST => Box::new(StableSemanticsSolver::new(af)),
+        }
+    }
+}
+
 #[derive(Default)]
 pub struct IpafairSolver {
+    af: AAFramework<usize>,
     semantics: Option<IpafairSolverSemantics>,
-    assumptions: Vec<usize>,
-    last_extension: Option<Vec<usize>>,
+    assumption: Option<usize>,
 }
 
 impl IpafairSolver {
@@ -34,38 +73,54 @@ impl IpafairSolver {
     }
 
     pub fn add_argument(&mut self, arg: usize) {
-        todo!()
+        self.af.new_argument(arg);
     }
 
     pub fn remove_argument(&mut self, arg: usize) {
-        todo!()
+        self.af.remove_argument(&arg).expect("no such argument");
     }
 
     pub fn add_attack(&mut self, attacker: usize, attacked: usize) {
-        todo!()
+        self.af
+            .new_attack(&attacker, &attacked)
+            .expect("no such arguments");
     }
 
     pub fn remove_attack(&mut self, attacker: usize, attacked: usize) {
-        todo!()
+        self.af
+            .remove_attack(&attacker, &attacked)
+            .expect("no such arguments");
     }
 
     pub fn add_assumption(&mut self, arg: usize) {
-        self.assumptions.push(arg);
+        if self.assumption.replace(arg).is_some() {
+            panic!("an assumption is already present")
+        }
     }
 
     pub fn check_credulous_acceptance_of_assumptions(&mut self) -> bool {
-        self.last_extension = None;
-        todo!();
-        self.assumptions.clear();
+        let arg = self
+            .af
+            .argument_set()
+            .get_argument(&self.assumption.take().expect("missing assumption"))
+            .expect("no such argument");
+        let mut solver = self
+            .semantics
+            .expect("the semantics is not defined")
+            .credulous_acceptance_solver(&self.af);
+        solver.is_credulously_accepted(arg)
     }
 
     pub fn check_skeptical_acceptance_of_assumptions(&mut self) -> bool {
-        self.last_extension = None;
-        todo!();
-        self.assumptions.clear();
-    }
-
-    pub fn in_last_extension(&self, arg: usize) -> bool {
-        self.last_extension.as_ref().unwrap().contains(&arg)
+        let arg = self
+            .af
+            .argument_set()
+            .get_argument(&self.assumption.take().expect("missing assumption"))
+            .expect("no such argument");
+        let mut solver = self
+            .semantics
+            .expect("the semantics is not defined")
+            .skeptical_acceptance_solver(&self.af);
+        solver.is_skeptically_accepted(arg)
     }
 }

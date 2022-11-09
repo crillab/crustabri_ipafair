@@ -112,11 +112,51 @@ pub extern "C" fn ipafair_solve_skept(
 }
 
 #[no_mangle]
-pub extern "C" fn ipafair_val(solver_ptr: *mut ::std::os::raw::c_void, arg: i32) -> i32 {
-    let solver = solver_from_ptr!(solver_ptr);
-    if solver.in_last_extension(i32_arg_to_usize(arg)) {
-        arg
-    } else {
-        -arg
+pub extern "C" fn ipafair_val(_solver_ptr: *mut ::std::os::raw::c_void, _arg: i32) -> i32 {
+    unimplemented!()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn coreo_test() {
+        let solver = ipafair_init();
+        ipafair_set_semantics(solver, semantics::from(IpafairSolverSemantics::CO));
+        ipafair_add_argument(solver, 1);
+        ipafair_add_argument(solver, 2);
+        ipafair_add_attack(solver, 1, 2);
+        ipafair_assume(solver, 1);
+        assert_eq!(STATUS_YES, ipafair_solve_cred(solver));
+        ipafair_assume(solver, 2);
+        assert_eq!(STATUS_NO, ipafair_solve_cred(solver));
+
+        ipafair_del_attack(solver, 1, 2);
+        ipafair_assume(solver, 1);
+        assert_eq!(STATUS_YES, ipafair_solve_cred(solver));
+        ipafair_assume(solver, 2);
+        assert_eq!(STATUS_YES, ipafair_solve_cred(solver));
+
+        ipafair_add_argument(solver, 3);
+        ipafair_add_attack(solver, 3, 2);
+        ipafair_add_attack(solver, 2, 1);
+        ipafair_assume(solver, 1);
+        assert_eq!(STATUS_YES, ipafair_solve_cred(solver));
+        ipafair_assume(solver, 2);
+        assert_eq!(STATUS_NO, ipafair_solve_cred(solver));
+        ipafair_assume(solver, 3);
+        assert_eq!(STATUS_YES, ipafair_solve_cred(solver));
+
+        ipafair_del_argument(solver, 1);
+        ipafair_add_argument(solver, 4);
+        ipafair_add_attack(solver, 4, 3);
+        ipafair_add_attack(solver, 3, 4);
+        ipafair_assume(solver, 2);
+        assert_eq!(STATUS_YES, ipafair_solve_cred(solver));
+        ipafair_assume(solver, 3);
+        assert_eq!(STATUS_YES, ipafair_solve_cred(solver));
+        ipafair_assume(solver, 4);
+        assert_eq!(STATUS_NO, ipafair_solve_skept(solver));
     }
 }
