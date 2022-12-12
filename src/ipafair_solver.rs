@@ -1,6 +1,9 @@
 use crustabri::{
-    AAFramework, CompleteSemanticsSolver, CredulousAcceptanceComputer, GroundedSemanticsSolver,
-    PreferredSemanticsSolver, SkepticalAcceptanceComputer, StableSemanticsSolver,
+    aa::AAFramework,
+    solvers::{
+        CompleteSemanticsSolver, CredulousAcceptanceComputer, GroundedSemanticsSolver,
+        PreferredSemanticsSolver, SkepticalAcceptanceComputer, StableSemanticsSolver,
+    },
 };
 use ipafair_sys::semantics;
 
