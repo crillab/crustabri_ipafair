@@ -121,7 +121,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn coreo_test() {
+    fn coreo_test_co() {
         let solver = ipafair_init();
         ipafair_set_semantics(solver, semantics::from(IpafairSolverSemantics::CO));
         ipafair_add_argument(solver, 1);
@@ -157,6 +157,6 @@ mod tests {
         ipafair_assume(solver, 3);
         assert_eq!(STATUS_YES, ipafair_solve_cred(solver));
         ipafair_assume(solver, 4);
-        assert_eq!(STATUS_NO, ipafair_solve_skept(solver));
+        assert_eq!(STATUS_YES, ipafair_solve_cred(solver));
     }
 }

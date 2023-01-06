@@ -1,9 +1,9 @@
 use crustabri::{
-    aa::AAFramework,
-    solvers::{
-        CompleteSemanticsSolver, CredulousAcceptanceComputer, GroundedSemanticsSolver,
-        PreferredSemanticsSolver, SkepticalAcceptanceComputer, StableSemanticsSolver,
+    dynamics::{
+        DynamicCompleteSemanticsSolver, DynamicPreferredSemanticsSolver, DynamicSolver,
+        DynamicStableSemanticsSolver,
     },
+    solvers::{CredulousAcceptanceComputer, SkepticalAcceptanceComputer},
 };
 use ipafair_sys::semantics;
 
@@ -35,34 +35,27 @@ impl From<IpafairSolverSemantics> for semantics {
     }
 }
 
-impl IpafairSolverSemantics {
-    fn credulous_acceptance_solver<'a>(
-        &self,
-        af: &'a AAFramework<usize>,
-    ) -> Box<dyn CredulousAcceptanceComputer<usize> + 'a> {
-        match self {
-            IpafairSolverSemantics::CO | IpafairSolverSemantics::PR => {
-                Box::new(CompleteSemanticsSolver::new(af))
-            }
-            IpafairSolverSemantics::ST => Box::new(StableSemanticsSolver::new(af)),
-        }
-    }
+trait IpafairAcceptanceSolver:
+    CredulousAcceptanceComputer<usize> + SkepticalAcceptanceComputer<usize> + DynamicSolver<usize>
+{
+}
+impl IpafairAcceptanceSolver for DynamicCompleteSemanticsSolver<usize> {}
+impl IpafairAcceptanceSolver for DynamicStableSemanticsSolver<usize> {}
+impl IpafairAcceptanceSolver for DynamicPreferredSemanticsSolver<usize> {}
 
-    fn skeptical_acceptance_solver<'a>(
-        &self,
-        af: &'a AAFramework<usize>,
-    ) -> Box<dyn SkepticalAcceptanceComputer<usize> + 'a> {
+impl IpafairSolverSemantics {
+    fn new_acceptance_solver<'a>(&self) -> Box<dyn IpafairAcceptanceSolver + 'a> {
         match self {
-            IpafairSolverSemantics::CO => Box::new(GroundedSemanticsSolver::new(af)),
-            IpafairSolverSemantics::PR => Box::new(PreferredSemanticsSolver::new(af)),
-            IpafairSolverSemantics::ST => Box::new(StableSemanticsSolver::new(af)),
+            IpafairSolverSemantics::CO => Box::new(DynamicCompleteSemanticsSolver::new()),
+            IpafairSolverSemantics::PR => Box::new(DynamicPreferredSemanticsSolver::new()),
+            IpafairSolverSemantics::ST => Box::new(DynamicStableSemanticsSolver::new()),
         }
     }
 }
 
 #[derive(Default)]
 pub struct IpafairSolver {
-    af: AAFramework<usize>,
+    solver: Option<Box<dyn IpafairAcceptanceSolver>>,
     semantics: Option<IpafairSolverSemantics>,
     assumption: Option<usize>,
 }
@@ -72,25 +65,34 @@ impl IpafairSolver {
         if self.semantics.is_some() {
             panic!("the semantics is already defined")
         }
-        self.semantics = Some(sem)
+        self.semantics = Some(sem);
+        self.solver = Some(sem.new_acceptance_solver());
     }
 
     pub fn add_argument(&mut self, arg: usize) {
-        self.af.new_argument(arg);
+        self.solver.as_mut().unwrap().new_argument(arg);
     }
 
     pub fn remove_argument(&mut self, arg: usize) {
-        self.af.remove_argument(&arg).expect("no such argument");
+        self.solver
+            .as_mut()
+            .unwrap()
+            .remove_argument(&arg)
+            .expect("no such argument");
     }
 
     pub fn add_attack(&mut self, attacker: usize, attacked: usize) {
-        self.af
+        self.solver
+            .as_mut()
+            .unwrap()
             .new_attack(&attacker, &attacked)
             .expect("no such arguments");
     }
 
     pub fn remove_attack(&mut self, attacker: usize, attacked: usize) {
-        self.af
+        self.solver
+            .as_mut()
+            .unwrap()
             .remove_attack(&attacker, &attacked)
             .expect("no such arguments");
     }
@@ -102,28 +104,16 @@ impl IpafairSolver {
     }
 
     pub fn check_credulous_acceptance_of_assumptions(&mut self) -> bool {
-        let arg = self
-            .af
-            .argument_set()
-            .get_argument(&self.assumption.take().expect("missing assumption"))
-            .expect("no such argument");
-        let mut solver = self
-            .semantics
-            .expect("the semantics is not defined")
-            .credulous_acceptance_solver(&self.af);
-        solver.is_credulously_accepted(arg)
+        self.solver
+            .as_mut()
+            .unwrap()
+            .is_credulously_accepted(&self.assumption.take().expect("missing assumption"))
     }
 
     pub fn check_skeptical_acceptance_of_assumptions(&mut self) -> bool {
-        let arg = self
-            .af
-            .argument_set()
-            .get_argument(&self.assumption.take().expect("missing assumption"))
-            .expect("no such argument");
-        let mut solver = self
-            .semantics
-            .expect("the semantics is not defined")
-            .skeptical_acceptance_solver(&self.af);
-        solver.is_skeptically_accepted(arg)
+        self.solver
+            .as_mut()
+            .unwrap()
+            .is_skeptically_accepted(&self.assumption.take().expect("missing assumption"))
     }
 }
