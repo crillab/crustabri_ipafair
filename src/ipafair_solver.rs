@@ -58,6 +58,7 @@ pub struct IpafairSolver {
     solver: Option<Box<dyn IpafairAcceptanceSolver>>,
     semantics: Option<IpafairSolverSemantics>,
     assumption: Option<usize>,
+    certificate: Option<Vec<usize>>,
 }
 
 impl IpafairSolver {
@@ -104,16 +105,34 @@ impl IpafairSolver {
     }
 
     pub fn check_credulous_acceptance_of_assumptions(&mut self) -> bool {
-        self.solver
+        let (status, certificate) = self
+            .solver
             .as_mut()
             .unwrap()
-            .is_credulously_accepted(&self.assumption.take().expect("missing assumption"))
+            .is_credulously_accepted_with_certificate(
+                &self.assumption.take().expect("missing assumption"),
+            );
+        self.certificate = certificate.map(|v| v.iter().map(|l| *l.label()).collect());
+        status
     }
 
     pub fn check_skeptical_acceptance_of_assumptions(&mut self) -> bool {
-        self.solver
+        let (status, certificate) = self
+            .solver
             .as_mut()
             .unwrap()
-            .is_skeptically_accepted(&self.assumption.take().expect("missing assumption"))
+            .is_skeptically_accepted_with_certificate(
+                &self.assumption.take().expect("missing assumption"),
+            );
+        self.certificate = certificate.map(|v| v.iter().map(|l| *l.label()).collect());
+        status
+    }
+
+    pub fn check_presence_in_last_certificate(&self, label: usize) -> bool {
+        self.certificate
+            .as_ref()
+            .unwrap()
+            .iter()
+            .any(|l| *l == label)
     }
 }
