@@ -50,7 +50,8 @@ class Crustabri(ipafair.AFSolver):
         self.lib.ipafair_release(self.solver)
 
     def add_argument(self, arg: int):
-        self.n += 1
+        if arg > self.n:
+            self.n = arg
         self.lib.ipafair_add_argument(self.solver, arg)
 
     def del_argument(self, arg: int):

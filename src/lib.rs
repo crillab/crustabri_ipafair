@@ -20,14 +20,14 @@ pub extern "C" fn ipafair_signature() -> *const ::std::os::raw::c_char {
 
 #[no_mangle]
 pub extern "C" fn ipafair_init() -> *mut ::std::os::raw::c_void {
-    Box::into_raw(Box::new(IpafairSolver::default())) as *mut _
+    Box::into_raw(Box::<IpafairSolver>::default()) as *mut _
 }
 
 #[no_mangle]
 pub extern "C" fn ipafair_release(solver_ptr: *mut ::std::os::raw::c_void) {
     debug_assert!(!solver_ptr.is_null());
     unsafe {
-        drop(Box::from_raw(solver_ptr));
+        drop(Box::from_raw(solver_ptr as *mut IpafairSolver));
     }
 }
 
