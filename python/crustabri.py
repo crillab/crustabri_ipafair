@@ -34,6 +34,7 @@ class Crustabri(ipafair.AFSolver):
         self.status = 0
         self.last_call = ""
 
+        self.n = 0
         if af_file is not None:
             contents = [line.strip() for line in open(af_file).read().split("\n") if not line.startswith("#") and line != '']
             p_line = contents[0]
