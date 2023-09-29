@@ -1,7 +1,11 @@
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
 
 use const_cstr::const_cstr;
-use ipafair_solver::{IpafairSolver, IpafairSolverSemantics};
+use crustabri::{
+    dynamics::DummyDynamicConstraintsEncoder,
+    solvers::{CompleteSemanticsSolver, StableSemanticsSolver},
+};
+use ipafair_solver::{FactoryType, IpafairSolver, IpafairSolverSemantics};
 use ipafair_sys::semantics;
 
 mod ipafair_solver;
@@ -21,6 +25,21 @@ pub extern "C" fn ipafair_signature() -> *const ::std::os::raw::c_char {
 #[no_mangle]
 pub extern "C" fn ipafair_init() -> *mut ::std::os::raw::c_void {
     Box::into_raw(Box::<IpafairSolver>::default()) as *mut _
+}
+
+#[no_mangle]
+pub extern "C" fn ipafair_init_dummy() -> *mut ::std::os::raw::c_void {
+    let factory: Box<FactoryType> = Box::new(move |s| match s {
+        IpafairSolverSemantics::CO => Box::new(DummyDynamicConstraintsEncoder::new(
+            Some(Box::new(|af| Box::new(CompleteSemanticsSolver::new(af)))),
+            None,
+        )),
+        IpafairSolverSemantics::ST => Box::new(DummyDynamicConstraintsEncoder::new(
+            Some(Box::new(|af| Box::new(StableSemanticsSolver::new(af)))),
+            Some(Box::new(|af| Box::new(StableSemanticsSolver::new(af)))),
+        )),
+    });
+    Box::into_raw(Box::new(IpafairSolver::new_with_factory(factory))) as *mut _
 }
 
 #[no_mangle]
@@ -124,10 +143,9 @@ pub extern "C" fn ipafair_val(solver_ptr: *mut ::std::os::raw::c_void, arg: i32)
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::ffi::c_void;
 
-    #[test]
-    fn coreo_test_co() {
-        let solver = ipafair_init();
+    fn coreo_test_co_for_solver(solver: *mut c_void) {
         ipafair_set_semantics(solver, semantics::from(IpafairSolverSemantics::CO));
         ipafair_add_argument(solver, 1);
         ipafair_add_argument(solver, 2);
@@ -190,5 +208,15 @@ mod tests {
                 && ipafair_val(solver, 2) == 2
                 && ipafair_val(solver, 3) == -3
         );
+    }
+
+    #[test]
+    fn coreo_test_co() {
+        coreo_test_co_for_solver(ipafair_init());
+    }
+
+    #[test]
+    fn coreo_test_co_dummy() {
+        coreo_test_co_for_solver(ipafair_init_dummy());
     }
 }

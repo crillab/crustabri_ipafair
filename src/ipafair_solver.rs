@@ -1,7 +1,7 @@
 use crustabri::{
     dynamics::{
-        DynamicCompleteSemanticsSolver, DynamicPreferredSemanticsSolver, DynamicSolver,
-        DynamicStableSemanticsSolver,
+        DummyDynamicConstraintsEncoder, DynamicCompleteSemanticsSolver,
+        DynamicPreferredSemanticsSolver, DynamicSolver, DynamicStableSemanticsSolver,
     },
     solvers::{CredulousAcceptanceComputer, SkepticalAcceptanceComputer},
 };
@@ -35,13 +35,14 @@ impl From<IpafairSolverSemantics> for semantics {
     }
 }
 
-trait IpafairAcceptanceSolver:
+pub trait IpafairAcceptanceSolver:
     CredulousAcceptanceComputer<usize> + SkepticalAcceptanceComputer<usize> + DynamicSolver<usize>
 {
 }
 impl IpafairAcceptanceSolver for DynamicCompleteSemanticsSolver<usize> {}
 impl IpafairAcceptanceSolver for DynamicStableSemanticsSolver<usize> {}
 impl IpafairAcceptanceSolver for DynamicPreferredSemanticsSolver<usize> {}
+impl IpafairAcceptanceSolver for DummyDynamicConstraintsEncoder<usize> {}
 
 impl IpafairSolverSemantics {
     fn new_acceptance_solver<'a>(&self) -> Box<dyn IpafairAcceptanceSolver + 'a> {
@@ -53,21 +54,39 @@ impl IpafairSolverSemantics {
     }
 }
 
-#[derive(Default)]
 pub struct IpafairSolver {
     solver: Option<Box<dyn IpafairAcceptanceSolver>>,
     semantics: Option<IpafairSolverSemantics>,
     assumption: Option<usize>,
     certificate: Option<Vec<usize>>,
+    factory: Box<FactoryType>,
 }
 
+impl Default for IpafairSolver {
+    fn default() -> Self {
+        Self::new_with_factory(Box::new(|s| s.new_acceptance_solver()))
+    }
+}
+
+pub type FactoryType = dyn Fn(IpafairSolverSemantics) -> Box<dyn IpafairAcceptanceSolver>;
+
 impl IpafairSolver {
+    pub fn new_with_factory(factory: Box<FactoryType>) -> Self {
+        Self {
+            solver: None,
+            semantics: None,
+            assumption: None,
+            certificate: None,
+            factory,
+        }
+    }
+
     pub fn set_semantics(&mut self, sem: IpafairSolverSemantics) {
         if self.semantics.is_some() {
             panic!("the semantics is already defined")
         }
         self.semantics = Some(sem);
-        self.solver = Some(sem.new_acceptance_solver());
+        self.solver = Some((self.factory)(sem));
     }
 
     pub fn add_argument(&mut self, arg: usize) {

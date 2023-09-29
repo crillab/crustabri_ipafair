@@ -16,5 +16,5 @@ crate-type = ["cdylib"]
 
 [dependencies]
 const-cstr = "0.3.0"
-crustabri = "1.0.0"
+crustabri = { path="../crustabri" }
 ipafair-sys = "1.0.0"
