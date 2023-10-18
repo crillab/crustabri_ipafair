@@ -3,6 +3,9 @@ use crustabri::{
         DummyDynamicConstraintsEncoder, DynamicCompleteSemanticsSolver,
         DynamicPreferredSemanticsSolver, DynamicSolver, DynamicStableSemanticsSolver,
     },
+    dynamics_attacks::{
+        DynamicCompleteSemanticsSolverAttacks, DynamicStableSemanticsSolverAttacks,
+    },
     solvers::{CredulousAcceptanceComputer, SkepticalAcceptanceComputer},
 };
 use ipafair_sys::semantics;
@@ -43,6 +46,8 @@ impl IpafairAcceptanceSolver for DynamicCompleteSemanticsSolver<usize> {}
 impl IpafairAcceptanceSolver for DynamicStableSemanticsSolver<usize> {}
 impl IpafairAcceptanceSolver for DynamicPreferredSemanticsSolver<usize> {}
 impl IpafairAcceptanceSolver for DummyDynamicConstraintsEncoder<usize> {}
+impl IpafairAcceptanceSolver for DynamicCompleteSemanticsSolverAttacks<usize> {}
+impl IpafairAcceptanceSolver for DynamicStableSemanticsSolverAttacks<usize> {}
 
 impl IpafairSolverSemantics {
     fn new_acceptance_solver<'a>(&self) -> Box<dyn IpafairAcceptanceSolver + 'a> {
