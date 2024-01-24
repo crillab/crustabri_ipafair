@@ -1,10 +1,10 @@
 use crustabri::{
+    dynamics::assumptions_on_attacks::{
+        DynamicCompleteSemanticsSolverAttacks, DynamicStableSemanticsSolverAttacks,
+    },
     dynamics::{
         DummyDynamicConstraintsEncoder, DynamicCompleteSemanticsSolver,
         DynamicPreferredSemanticsSolver, DynamicSolver, DynamicStableSemanticsSolver,
-    },
-    dynamics_attacks::{
-        DynamicCompleteSemanticsSolverAttacks, DynamicStableSemanticsSolverAttacks,
     },
     solvers::{CredulousAcceptanceComputer, SkepticalAcceptanceComputer},
 };

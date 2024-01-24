@@ -2,10 +2,10 @@
 
 use const_cstr::const_cstr;
 use crustabri::{
-    dynamics::DummyDynamicConstraintsEncoder,
-    dynamics_attacks::{
+    dynamics::assumptions_on_attacks::{
         DynamicCompleteSemanticsSolverAttacks, DynamicStableSemanticsSolverAttacks,
     },
+    dynamics::DummyDynamicConstraintsEncoder,
     solvers::{CompleteSemanticsSolver, StableSemanticsSolver},
 };
 use ipafair_solver::{FactoryType, IpafairSolver, IpafairSolverSemantics};
@@ -46,39 +46,18 @@ pub extern "C" fn ipafair_init_dummy() -> *mut ::std::os::raw::c_void {
 }
 
 #[no_mangle]
-pub extern "C" fn ipafair_init_attacks_2_0() -> *mut ::std::os::raw::c_void {
+pub extern "C" fn ipafair_init_attacks(
+    factor: std::os::raw::c_double,
+) -> *mut ::std::os::raw::c_void {
+    if factor < 1. {
+        panic!("factor must be at least 1");
+    }
     let factory: Box<FactoryType> = Box::new(move |s| match s {
         IpafairSolverSemantics::CO => Box::new(
-            DynamicCompleteSemanticsSolverAttacks::new_with_arg_factor(2.),
+            DynamicCompleteSemanticsSolverAttacks::new_with_arg_factor(factor),
         ),
         IpafairSolverSemantics::ST => Box::new(
-            DynamicStableSemanticsSolverAttacks::new_with_arg_factor(2.),
-        ),
-    });
-    Box::into_raw(Box::new(IpafairSolver::new_with_factory(factory))) as *mut _
-}
-
-#[no_mangle]
-pub extern "C" fn ipafair_init_attacks_1_5() -> *mut ::std::os::raw::c_void {
-    let factory: Box<FactoryType> = Box::new(move |s| match s {
-        IpafairSolverSemantics::CO => Box::new(
-            DynamicCompleteSemanticsSolverAttacks::new_with_arg_factor(1.5),
-        ),
-        IpafairSolverSemantics::ST => Box::new(
-            DynamicStableSemanticsSolverAttacks::new_with_arg_factor(1.5),
-        ),
-    });
-    Box::into_raw(Box::new(IpafairSolver::new_with_factory(factory))) as *mut _
-}
-
-#[no_mangle]
-pub extern "C" fn ipafair_init_attacks_1_25() -> *mut ::std::os::raw::c_void {
-    let factory: Box<FactoryType> = Box::new(move |s| match s {
-        IpafairSolverSemantics::CO => Box::new(
-            DynamicCompleteSemanticsSolverAttacks::new_with_arg_factor(1.25),
-        ),
-        IpafairSolverSemantics::ST => Box::new(
-            DynamicStableSemanticsSolverAttacks::new_with_arg_factor(1.25),
+            DynamicStableSemanticsSolverAttacks::new_with_arg_factor(factor),
         ),
     });
     Box::into_raw(Box::new(IpafairSolver::new_with_factory(factory))) as *mut _
