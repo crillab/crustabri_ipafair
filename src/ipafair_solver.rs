@@ -1,11 +1,12 @@
 use crustabri::{
-    dynamics::assumptions_on_attacks::{
-        DynamicCompleteSemanticsSolverAttacks, DynamicStableSemanticsSolverAttacks,
-    },
     dynamics::{
+        assumptions_on_attacks::{
+            DynamicCompleteSemanticsSolverAttacks, DynamicStableSemanticsSolverAttacks,
+        },
         DummyDynamicConstraintsEncoder, DynamicCompleteSemanticsSolver,
         DynamicPreferredSemanticsSolver, DynamicSolver, DynamicStableSemanticsSolver,
     },
+    sat::{ExternalSatSolver, SatSolverFactoryFn},
     solvers::{CredulousAcceptanceComputer, SkepticalAcceptanceComputer},
 };
 use ipafair_sys::semantics;
@@ -50,11 +51,28 @@ impl IpafairAcceptanceSolver for DynamicCompleteSemanticsSolverAttacks<usize> {}
 impl IpafairAcceptanceSolver for DynamicStableSemanticsSolverAttacks<usize> {}
 
 impl IpafairSolverSemantics {
-    fn new_acceptance_solver<'a>(&self) -> Box<dyn IpafairAcceptanceSolver + 'a> {
+    pub fn new_acceptance_solver<'a>(&self) -> Box<dyn IpafairAcceptanceSolver + 'a> {
         match self {
             IpafairSolverSemantics::CO => Box::new(DynamicCompleteSemanticsSolver::new()),
             // IpafairSolverSemantics::PR => Box::new(DynamicPreferredSemanticsSolver::new()),
             IpafairSolverSemantics::ST => Box::new(DynamicStableSemanticsSolver::new()),
+        }
+    }
+
+    pub fn new_acceptance_solver_with_external_solver<'a>(
+        &self,
+        program: &'static str,
+    ) -> Box<dyn IpafairAcceptanceSolver + 'a> {
+        let solver_factory: Box<SatSolverFactoryFn> =
+            Box::new(|| Box::new(ExternalSatSolver::new(program.to_owned(), vec![])));
+        match self {
+            IpafairSolverSemantics::CO => Box::new(
+                DynamicCompleteSemanticsSolver::new_with_sat_solver_factory(solver_factory),
+            ),
+            // IpafairSolverSemantics::PR => Box::new(DynamicPreferredSemanticsSolver::new()),
+            IpafairSolverSemantics::ST => Box::new(
+                DynamicStableSemanticsSolver::new_with_sat_solver_factory(solver_factory),
+            ),
         }
     }
 }
