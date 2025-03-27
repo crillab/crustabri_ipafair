@@ -34,10 +34,12 @@ pub extern "C" fn ipafair_init() -> *mut ::std::os::raw::c_void {
 pub extern "C" fn ipafair_init_dummy() -> *mut ::std::os::raw::c_void {
     let factory: Box<FactoryType> = Box::new(move |s| match s {
         IpafairSolverSemantics::CO => Box::new(DummyDynamicConstraintsEncoder::new(
+            None,
             Some(Box::new(|af| Box::new(CompleteSemanticsSolver::new(af)))),
             None,
         )),
         IpafairSolverSemantics::ST => Box::new(DummyDynamicConstraintsEncoder::new(
+            Some(Box::new(|af| Box::new(StableSemanticsSolver::new(af)))),
             Some(Box::new(|af| Box::new(StableSemanticsSolver::new(af)))),
             Some(Box::new(|af| Box::new(StableSemanticsSolver::new(af)))),
         )),

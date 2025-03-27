@@ -6,7 +6,7 @@ use crustabri::{
         DummyDynamicConstraintsEncoder, DynamicCompleteSemanticsSolver,
         DynamicPreferredSemanticsSolver, DynamicSolver, DynamicStableSemanticsSolver,
     },
-    sat::{ExternalSatSolver, SatSolverFactoryFn},
+    sat::{ExternalSatSolver, SatSolver, SatSolverFactory},
     solvers::{CredulousAcceptanceComputer, SkepticalAcceptanceComputer},
 };
 use ipafair_sys::semantics;
@@ -63,8 +63,7 @@ impl IpafairSolverSemantics {
         &self,
         program: &'static str,
     ) -> Box<dyn IpafairAcceptanceSolver + 'a> {
-        let solver_factory: Box<SatSolverFactoryFn> =
-            Box::new(|| Box::new(ExternalSatSolver::new(program.to_owned(), vec![])));
+        let solver_factory = Box::new(ExternalSatSolverFactory::new(program.to_owned()));
         match self {
             IpafairSolverSemantics::CO => Box::new(
                 DynamicCompleteSemanticsSolver::new_with_sat_solver_factory(solver_factory),
@@ -74,6 +73,22 @@ impl IpafairSolverSemantics {
                 DynamicStableSemanticsSolver::new_with_sat_solver_factory(solver_factory),
             ),
         }
+    }
+}
+
+pub struct ExternalSatSolverFactory {
+    program: String,
+}
+
+impl ExternalSatSolverFactory {
+    pub fn new(program: String) -> Self {
+        Self { program }
+    }
+}
+
+impl SatSolverFactory for ExternalSatSolverFactory {
+    fn new_solver(&self) -> Box<dyn SatSolver> {
+        Box::new(ExternalSatSolver::new(self.program.clone(), vec![]))
     }
 }
 
