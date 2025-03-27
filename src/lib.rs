@@ -84,6 +84,24 @@ pub extern "C" fn ipafair_init_with_external_solver(
 }
 
 #[no_mangle]
+pub extern "C" fn ipafair_init_with_ipasir_solver(
+    c_path: *const std::os::raw::c_char,
+) -> *mut ::std::os::raw::c_void {
+    if c_path.is_null() {
+        return std::ptr::null_mut();
+    }
+    let cstr_path = unsafe { std::ffi::CStr::from_ptr(c_path) };
+    let path = if let Ok(p) = cstr_path.to_str() {
+        p
+    } else {
+        return std::ptr::null_mut();
+    };
+    Box::into_raw(Box::new(IpafairSolver::new_with_factory(Box::new(|s| {
+        s.new_acceptance_solver_with_ipasir_solver(path)
+    })))) as *mut _
+}
+
+#[no_mangle]
 pub extern "C" fn ipafair_release(solver_ptr: *mut ::std::os::raw::c_void) {
     debug_assert!(!solver_ptr.is_null());
     unsafe {

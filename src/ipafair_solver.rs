@@ -6,7 +6,7 @@ use crustabri::{
         DummyDynamicConstraintsEncoder, DynamicCompleteSemanticsSolver,
         DynamicPreferredSemanticsSolver, DynamicSolver, DynamicStableSemanticsSolver,
     },
-    sat::{ExternalSatSolver, SatSolver, SatSolverFactory},
+    sat::{ExternalSatSolverFactory, IpasirSatSolverFactory},
     solvers::{CredulousAcceptanceComputer, SkepticalAcceptanceComputer},
 };
 use ipafair_sys::semantics;
@@ -63,7 +63,7 @@ impl IpafairSolverSemantics {
         &self,
         program: &'static str,
     ) -> Box<dyn IpafairAcceptanceSolver + 'a> {
-        let solver_factory = Box::new(ExternalSatSolverFactory::new(program.to_owned()));
+        let solver_factory = Box::new(ExternalSatSolverFactory::new(program.to_owned(), vec![]));
         match self {
             IpafairSolverSemantics::CO => Box::new(
                 DynamicCompleteSemanticsSolver::new_with_sat_solver_factory(solver_factory),
@@ -74,21 +74,21 @@ impl IpafairSolverSemantics {
             ),
         }
     }
-}
 
-pub struct ExternalSatSolverFactory {
-    program: String,
-}
-
-impl ExternalSatSolverFactory {
-    pub fn new(program: String) -> Self {
-        Self { program }
-    }
-}
-
-impl SatSolverFactory for ExternalSatSolverFactory {
-    fn new_solver(&self) -> Box<dyn SatSolver> {
-        Box::new(ExternalSatSolver::new(self.program.clone(), vec![]))
+    pub fn new_acceptance_solver_with_ipasir_solver<'a>(
+        &self,
+        lib: &'static str,
+    ) -> Box<dyn IpafairAcceptanceSolver + 'a> {
+        let solver_factory = Box::new(IpasirSatSolverFactory::new(lib));
+        match self {
+            IpafairSolverSemantics::CO => Box::new(
+                DynamicCompleteSemanticsSolver::new_with_sat_solver_factory(solver_factory),
+            ),
+            // IpafairSolverSemantics::PR => Box::new(DynamicPreferredSemanticsSolver::new()),
+            IpafairSolverSemantics::ST => Box::new(
+                DynamicStableSemanticsSolver::new_with_sat_solver_factory(solver_factory),
+            ),
+        }
     }
 }
 
