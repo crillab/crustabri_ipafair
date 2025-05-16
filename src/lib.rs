@@ -1,20 +1,20 @@
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
 
 use const_cstr::const_cstr;
-use crustabri::{
+use ipafair_solver::{FactoryType, IpafairSolver, IpafairSolverSemantics};
+use ipafair_sys::semantics;
+use scallop::{
     dynamics::assumptions_on_attacks::{
         DynamicCompleteSemanticsSolverAttacks, DynamicStableSemanticsSolverAttacks,
     },
     dynamics::DummyDynamicConstraintsEncoder,
     solvers::{CompleteSemanticsSolver, StableSemanticsSolver},
 };
-use ipafair_solver::{FactoryType, IpafairSolver, IpafairSolverSemantics};
-use ipafair_sys::semantics;
 
 mod ipafair_solver;
 
 const_cstr! {
-    IPAFAIR_SIGNATURE = "ICCMA'23";
+    IPAFAIR_SIGNATURE = "ICCMA'25";
 }
 
 const STATUS_YES: ::std::os::raw::c_int = 10;
@@ -91,11 +91,13 @@ pub extern "C" fn ipafair_init_with_ipasir_solver(
         return std::ptr::null_mut();
     }
     let cstr_path = unsafe { std::ffi::CStr::from_ptr(c_path) };
+    println!("cstr_path is {cstr_path:?}");
     let path = if let Ok(p) = cstr_path.to_str() {
         p
     } else {
         return std::ptr::null_mut();
     };
+    println!("path is {path:?}");
     Box::into_raw(Box::new(IpafairSolver::new_with_factory(Box::new(|s| {
         s.new_acceptance_solver_with_ipasir_solver(path)
     })))) as *mut _

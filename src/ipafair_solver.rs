@@ -1,4 +1,5 @@
-use crustabri::{
+use ipafair_sys::semantics;
+use scallop::{
     dynamics::{
         assumptions_on_attacks::{
             DynamicCompleteSemanticsSolverAttacks, DynamicStableSemanticsSolverAttacks,
@@ -9,7 +10,6 @@ use crustabri::{
     sat::{ExternalSatSolverFactory, IpasirSatSolverFactory},
     solvers::{CredulousAcceptanceComputer, SkepticalAcceptanceComputer},
 };
-use ipafair_sys::semantics;
 
 #[derive(Copy, Clone)]
 pub enum IpafairSolverSemantics {

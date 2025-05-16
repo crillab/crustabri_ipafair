@@ -1,9 +1,9 @@
 [package]
-name = "crustabri_ipafair"
+name = "scallop_ipafair"
 authors = ["Jean-Marie Lagniez <lagniez@cril.fr>", "Emmanuel Lonca <lonca@cril.fr>", "Jean-Guy Mailly <jean-guy.mailly@u-paris.fr>"]
 license = "GPL-3.0-or-later"
 version = "1.1.0"
-description = "An IPAFAIR compatible library built upon the Crustabri solver."
+description = "An IPAFAIR compatible library built upon the Scallop solver."
 categories = ["api-bindings", "science"]
 keywords = ["argumentation", "frameworks", "AF", "dynamics", "IPAFAIR"]
 repository = "https://github.com/crillab/crustabri_ipafair"
@@ -16,5 +16,5 @@ crate-type = ["cdylib"]
 
 [dependencies]
 const-cstr = "0.3.0"
-crustabri = "1.1"
+scallop = {path = "../scallop" }
 ipafair-sys = "1.0"
