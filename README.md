@@ -1,23 +1,23 @@
-# Scalop_ipafair
+# Crustabri_ipafair
 
-Scalop_ipafair provides an IPAFAIR-compatible library built upon the Scalop solver.
+Crustabri_ipafair provides an IPAFAIR-compatible library built upon the Scalop (formerly known as Crustabri) solver.
 It was ranked first (under the name Crustabri) for the three tracks of the [ICCMA'23 competition](https://iccma2023.github.io/).
 
-Compiling the project with `cargo build --release` produces the library `libscalop_ipafair.so` in the `target/release` directory.
+Compiling the project with `cargo build --release` produces the library `libcrustabri_ipafair.so` in the `target/release` directory.
 See the [rust-lang.org dedicated page](https://www.rust-lang.org/tools/install) if you need to install the Rust toolchain (which includes `cargo`).
 
 ## Requirements
 
-Scalop_ipafair relies on on `bindgen` to generate a C-compatible library, which itself relies on `Clang`.
+Crustabri_ipafair relies on on `bindgen` to generate a C-compatible library, which itself relies on `Clang`.
 See the requirements on the [bindgen documentation](https://rust-lang.github.io/rust-bindgen/) to install `Clang` if you issue compilation errors.
 
 ## Resources
 
-The `resources` directory contains archives with the material needed to replay the ICCMA'23 competition with the submitted solver and with alternative algorithms.
+The `resources` directory contains archives with the material needed to replay the ICCMA'23 and ICCMA'25 competition with the submitted solver and with alternative algorithms.
 Some minor changes have been since the competition in order to make the project (library + Python scripts) compatible with more operating systems.
 In particular, the archive `iccma25.tar.gz` gives an example of how to use an IPASIR library for the SAT solver.
 
 ## License
 
-Scalop_ipafair is developed at CRIL (Univ. Artois & CNRS).
+Crustabri_ipafair is developed at CRIL (Univ. Artois & CNRS).
 It is made available under the terms of the GNU GPLv3 license.
