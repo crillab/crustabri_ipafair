@@ -1,15 +1,8 @@
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
 
 use const_cstr::const_cstr;
-use ipafair_solver::{FactoryType, IpafairSolver, IpafairSolverSemantics};
+use ipafair_solver::{IpafairSolver, IpafairSolverSemantics};
 use ipafair_sys::semantics;
-use scallop::{
-    dynamics::assumptions_on_attacks::{
-        DynamicCompleteSemanticsSolverAttacks, DynamicStableSemanticsSolverAttacks,
-    },
-    dynamics::DummyDynamicConstraintsEncoder,
-    solvers::{CompleteSemanticsSolver, StableSemanticsSolver},
-};
 
 mod ipafair_solver;
 
@@ -28,41 +21,6 @@ pub extern "C" fn ipafair_signature() -> *const ::std::os::raw::c_char {
 #[no_mangle]
 pub extern "C" fn ipafair_init() -> *mut ::std::os::raw::c_void {
     Box::into_raw(Box::<IpafairSolver>::default()) as *mut _
-}
-
-#[no_mangle]
-pub extern "C" fn ipafair_init_dummy() -> *mut ::std::os::raw::c_void {
-    let factory: Box<FactoryType> = Box::new(move |s| match s {
-        IpafairSolverSemantics::CO => Box::new(DummyDynamicConstraintsEncoder::new(
-            None,
-            Some(Box::new(|af| Box::new(CompleteSemanticsSolver::new(af)))),
-            None,
-        )),
-        IpafairSolverSemantics::ST => Box::new(DummyDynamicConstraintsEncoder::new(
-            Some(Box::new(|af| Box::new(StableSemanticsSolver::new(af)))),
-            Some(Box::new(|af| Box::new(StableSemanticsSolver::new(af)))),
-            Some(Box::new(|af| Box::new(StableSemanticsSolver::new(af)))),
-        )),
-    });
-    Box::into_raw(Box::new(IpafairSolver::new_with_factory(factory))) as *mut _
-}
-
-#[no_mangle]
-pub extern "C" fn ipafair_init_attacks(
-    factor: std::os::raw::c_double,
-) -> *mut ::std::os::raw::c_void {
-    if factor < 1. {
-        panic!("factor must be at least 1");
-    }
-    let factory: Box<FactoryType> = Box::new(move |s| match s {
-        IpafairSolverSemantics::CO => Box::new(
-            DynamicCompleteSemanticsSolverAttacks::new_with_arg_factor(factor),
-        ),
-        IpafairSolverSemantics::ST => Box::new(
-            DynamicStableSemanticsSolverAttacks::new_with_arg_factor(factor),
-        ),
-    });
-    Box::into_raw(Box::new(IpafairSolver::new_with_factory(factory))) as *mut _
 }
 
 #[no_mangle]
@@ -274,10 +232,5 @@ mod tests {
     #[test]
     fn coreo_test_co() {
         coreo_test_co_for_solver(ipafair_init());
-    }
-
-    #[test]
-    fn coreo_test_co_dummy() {
-        coreo_test_co_for_solver(ipafair_init_dummy());
     }
 }

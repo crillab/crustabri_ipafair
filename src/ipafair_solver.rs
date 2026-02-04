@@ -1,9 +1,6 @@
 use ipafair_sys::semantics;
-use scallop::{
+use scalop::{
     dynamics::{
-        assumptions_on_attacks::{
-            DynamicCompleteSemanticsSolverAttacks, DynamicStableSemanticsSolverAttacks,
-        },
         DummyDynamicConstraintsEncoder, DynamicCompleteSemanticsSolver,
         DynamicPreferredSemanticsSolver, DynamicSolver, DynamicStableSemanticsSolver,
     },
@@ -14,7 +11,7 @@ use scallop::{
 #[derive(Copy, Clone)]
 pub enum IpafairSolverSemantics {
     CO,
-    // PR,
+    PR,
     ST,
 }
 
@@ -22,7 +19,7 @@ impl From<semantics> for IpafairSolverSemantics {
     fn from(uint_sem: semantics) -> Self {
         match uint_sem {
             1 => IpafairSolverSemantics::CO,
-            // 2 => IpafairSolverSemantics::PR,
+            2 => IpafairSolverSemantics::PR,
             3 => IpafairSolverSemantics::ST,
             _ => panic!("unexpected semantics index"),
         }
@@ -33,7 +30,7 @@ impl From<IpafairSolverSemantics> for semantics {
     fn from(sem: IpafairSolverSemantics) -> Self {
         match sem {
             IpafairSolverSemantics::CO => 1,
-            // IpafairSolverSemantics::PR => 2,
+            IpafairSolverSemantics::PR => 2,
             IpafairSolverSemantics::ST => 3,
         }
     }
@@ -47,14 +44,12 @@ impl IpafairAcceptanceSolver for DynamicCompleteSemanticsSolver<usize> {}
 impl IpafairAcceptanceSolver for DynamicStableSemanticsSolver<usize> {}
 impl IpafairAcceptanceSolver for DynamicPreferredSemanticsSolver<usize> {}
 impl IpafairAcceptanceSolver for DummyDynamicConstraintsEncoder<usize> {}
-impl IpafairAcceptanceSolver for DynamicCompleteSemanticsSolverAttacks<usize> {}
-impl IpafairAcceptanceSolver for DynamicStableSemanticsSolverAttacks<usize> {}
 
 impl IpafairSolverSemantics {
     pub fn new_acceptance_solver<'a>(&self) -> Box<dyn IpafairAcceptanceSolver + 'a> {
         match self {
             IpafairSolverSemantics::CO => Box::new(DynamicCompleteSemanticsSolver::new()),
-            // IpafairSolverSemantics::PR => Box::new(DynamicPreferredSemanticsSolver::new()),
+            IpafairSolverSemantics::PR => Box::new(DynamicPreferredSemanticsSolver::new()),
             IpafairSolverSemantics::ST => Box::new(DynamicStableSemanticsSolver::new()),
         }
     }
@@ -68,7 +63,7 @@ impl IpafairSolverSemantics {
             IpafairSolverSemantics::CO => Box::new(
                 DynamicCompleteSemanticsSolver::new_with_sat_solver_factory(solver_factory),
             ),
-            // IpafairSolverSemantics::PR => Box::new(DynamicPreferredSemanticsSolver::new()),
+            IpafairSolverSemantics::PR => Box::new(DynamicPreferredSemanticsSolver::new()),
             IpafairSolverSemantics::ST => Box::new(
                 DynamicStableSemanticsSolver::new_with_sat_solver_factory(solver_factory),
             ),
@@ -84,7 +79,7 @@ impl IpafairSolverSemantics {
             IpafairSolverSemantics::CO => Box::new(
                 DynamicCompleteSemanticsSolver::new_with_sat_solver_factory(solver_factory),
             ),
-            // IpafairSolverSemantics::PR => Box::new(DynamicPreferredSemanticsSolver::new()),
+            IpafairSolverSemantics::PR => Box::new(DynamicPreferredSemanticsSolver::new()),
             IpafairSolverSemantics::ST => Box::new(
                 DynamicStableSemanticsSolver::new_with_sat_solver_factory(solver_factory),
             ),
@@ -186,10 +181,6 @@ impl IpafairSolver {
     }
 
     pub fn check_presence_in_last_certificate(&self, label: usize) -> bool {
-        self.certificate
-            .as_ref()
-            .unwrap()
-            .iter()
-            .any(|l| *l == label)
+        self.certificate.as_ref().unwrap().contains(&label)
     }
 }
